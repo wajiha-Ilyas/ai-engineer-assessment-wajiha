@@ -66,10 +66,40 @@ async def test_fallback_on_routing_error_hero_keyword():
 
 @pytest.mark.asyncio
 async def test_fallback_on_routing_error_no_hero():
-    """When LLM raises RoutingError and no hero keyword found, defaults to dataset."""
+    """When LLM raises RoutingError and no hero/country keyword, returns 'none'."""
     fake = FakeLLMClient(raises=RoutingError("parse error"))
-    decision = await route_question("What is the GDP of Germany?", client=fake)
+    decision = await route_question("How do I make biryani?", client=fake)
+    assert decision.route == "none"
+
+
+@pytest.mark.asyncio
+async def test_sanity_check_overrides_none_for_hero():
+    """If LLM returns 'none' but question contains a hero keyword, override to 'superhero'."""
+    fake = FakeLLMClient(
+        RouteDecision(route="none", superhero_names=[], dataset_query="")
+    )
+    decision = await route_question("Tell me about spider-man", client=fake)
+    assert decision.route == "superhero"
+
+
+@pytest.mark.asyncio
+async def test_sanity_check_overrides_none_for_country():
+    """If LLM returns 'none' but question contains a country keyword, override to 'dataset'."""
+    fake = FakeLLMClient(
+        RouteDecision(route="none", superhero_names=[], dataset_query="")
+    )
+    decision = await route_question("What is the GDP of Japan?", client=fake)
     assert decision.route == "dataset"
+
+
+@pytest.mark.asyncio
+async def test_sanity_check_keeps_none_for_offtopic():
+    """If LLM returns 'none' and no keyword matches, keep 'none'."""
+    fake = FakeLLMClient(
+        RouteDecision(route="none", superhero_names=[], dataset_query="")
+    )
+    decision = await route_question("How do I make biryani?", client=fake)
+    assert decision.route == "none"
 
 
 @pytest.mark.asyncio
