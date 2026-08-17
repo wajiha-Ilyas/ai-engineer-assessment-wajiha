@@ -39,7 +39,7 @@ async def search_superhero(name: str) -> SuperheroResult | None:
     redacted_url = f"{BASE_URL}/REDACTED/search/{encoded}"
 
     try:
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
             resp = await client.get(url)
     except httpx.TimeoutException as exc:
         logger.warning("Superhero API timeout for %r", name)

@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 class AskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
+    session_id: str | None = None
 
 
 class Source(BaseModel):
@@ -21,3 +22,4 @@ class AskResponse(BaseModel):
     answer: str
     route: Literal["superhero", "dataset", "both", "none"]
     sources: list[Source]
+    session_id: str

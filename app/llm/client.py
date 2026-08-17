@@ -35,7 +35,18 @@ class RouteDecision:
 
 class LLMClientProtocol(Protocol):
     async def route(self, question: str) -> RouteDecision: ...
-    async def answer(self, question: str, context_blocks: list[str]) -> str: ...
+    async def answer(
+        self,
+        question: str,
+        context_blocks: list[str],
+        history: list[dict] | None = None,
+    ) -> str: ...
+    async def chat(
+        self,
+        messages: list[dict],
+        temperature: float = 0.4,
+        max_tokens: int = 200,
+    ) -> str: ...
 
 
 # ---------------------------------------------------------------------------
@@ -100,21 +111,36 @@ class LLMClient:
             logger.warning("Router returned unparseable JSON: %r", raw)
             raise RoutingError(f"Router JSON parse failed: {exc}") from exc
 
-    async def answer(self, question: str, context_blocks: list[str]) -> str:
+    async def answer(
+        self,
+        question: str,
+        context_blocks: list[str],
+        history: list[dict] | None = None,
+    ) -> str:
         context_text = "\n\n".join(
             f"[S{i + 1}] {block}" for i, block in enumerate(context_blocks)
         )
         user_msg = f"Context:\n{context_text}\n\nQuestion: {question}"
 
+        messages: list[dict] = [{"role": "system", "content": _ANSWER_SYSTEM}]
+        if history:
+            messages.extend(history)
+        messages.append({"role": "user", "content": user_msg})
+
+        return await self.chat(messages, temperature=0.2, max_tokens=512)
+
+    async def chat(
+        self,
+        messages: list[dict],
+        temperature: float = 0.4,
+        max_tokens: int = 200,
+    ) -> str:
         try:
             completion = await self._client.chat.completions.create(
                 model=self._model,
-                messages=[
-                    {"role": "system", "content": _ANSWER_SYSTEM},
-                    {"role": "user", "content": user_msg},
-                ],
-                temperature=0.2,
-                max_tokens=512,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
             )
         except APITimeoutError as exc:
             raise UpstreamTimeout("groq") from exc

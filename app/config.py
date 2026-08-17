@@ -10,5 +10,9 @@ class Settings(BaseSettings):
     app_log_level: str = "INFO"
     allowed_origins: str = ""
 
+    # Memory
+    redis_url: str = ""           # leave empty to use in-memory fallback
+    session_ttl_seconds: int = 3600  # 1 hour
+
 
 settings = Settings()

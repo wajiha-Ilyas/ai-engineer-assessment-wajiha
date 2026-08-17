@@ -17,8 +17,11 @@ class FakeLLMClient:
     async def route(self, question: str) -> RouteDecision:
         return RouteDecision(route="none")
 
-    async def answer(self, question: str, context_blocks: list[str]) -> str:
+    async def answer(self, question: str, context_blocks: list[str], history=None) -> str:
         self.last_context_blocks = context_blocks
+        return self._answer_text
+
+    async def chat(self, messages: list[dict], temperature: float = 0.4, max_tokens: int = 200) -> str:
         return self._answer_text
 
 
@@ -37,14 +40,14 @@ CHUNK = Chunk(doc_id="usa", chunk_id=0, title="United States of America", text="
 async def test_synthesize_superhero_only():
     fake = FakeLLMClient()
     decision = RouteDecision(route="superhero", superhero_names=["Iron Man"])
-    resp = await synthesize("Who is Iron Man?", decision, [HERO], [], client=fake)
+    resp = await synthesize("Who is Iron Man?", decision, [HERO], [], client=fake, session_id="s1")
 
     assert isinstance(resp, AskResponse)
     assert resp.route == "superhero"
+    assert resp.session_id == "s1"
     assert len(resp.sources) == 1
     assert resp.sources[0].kind == "superhero_api"
     assert resp.sources[0].name == "Iron Man"
-    # LLM was called with one context block containing the hero data
     assert len(fake.last_context_blocks) == 1
     assert "Iron Man" in fake.last_context_blocks[0]
 
@@ -75,13 +78,11 @@ async def test_synthesize_both():
 
 @pytest.mark.asyncio
 async def test_synthesize_no_context_calls_fallback():
-    """When there are no context blocks, the fallback handler IS called via LLM."""
-    fake = FakeLLMClient(answer_text="Math isn't my specialty! I'm Nova.")
+    """When there are no context blocks, the fallback (chat) is called."""
+    fake = FakeLLMClient(answer_text="Math is not my specialty! I am Nova.")
     decision = RouteDecision(route="none")
     resp = await synthesize("What is 2+2?", decision, [], [], client=fake)
 
     assert resp.route == "none"
     assert resp.sources == []
-    # fallback routes through answer() with a [FALLBACK] context block
-    assert fake.last_context_blocks == ["[FALLBACK] What is 2+2?"]
-    assert "Nova" in resp.answer
+    assert resp.answer == "Math is not my specialty! I am Nova."

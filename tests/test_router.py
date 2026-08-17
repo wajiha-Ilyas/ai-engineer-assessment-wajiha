@@ -19,8 +19,11 @@ class FakeLLMClient:
             raise self._raises
         return self._decision
 
-    async def answer(self, question: str, context_blocks: list[str]) -> str:
+    async def answer(self, question: str, context_blocks: list[str], history=None) -> str:
         return "fake answer"
+
+    async def chat(self, messages: list[dict], temperature: float = 0.4, max_tokens: int = 200) -> str:
+        return "fake chat answer"
 
 
 @pytest.mark.asyncio

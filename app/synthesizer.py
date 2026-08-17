@@ -32,6 +32,8 @@ async def synthesize(
     hero_results: list[SuperheroResult],
     dataset_chunks: list[Chunk],
     client: LLMClientProtocol | None = None,
+    history: list[dict] | None = None,
+    session_id: str = "",
 ) -> AskResponse:
     """
     Build context blocks from tool results, call the LLM to get a grounded
@@ -67,12 +69,13 @@ async def synthesize(
     if not context_blocks:
         # No tool results — use the few-shot fallback (handles greetings,
         # self-intro, off-topic) instead of a static error string.
-        answer = await handle_fallback(question, client=c)
+        answer = await handle_fallback(question, history=history, client=c)
     else:
-        answer = await c.answer(question, context_blocks)
+        answer = await c.answer(question, context_blocks, history=history)
 
     return AskResponse(
         answer=answer,
         route=decision.route,
         sources=sources,
+        session_id=session_id,
     )
