@@ -3,6 +3,17 @@
 **Nova** is a FastAPI chatbot that answers questions about superheroes and five countries.
 It uses a real hosted LLM (Groq / Llama 3.1) to route, retrieve, and synthesise grounded answers, with a full React/TypeScript chat UI and conversation memory.
 
+## Screenshots
+
+**Greeting & Superhero query**
+![Greeting and superhero query](screenshots/01-greeting-and-superhero.png)
+
+**Dataset query (Japan) & off-topic refusal (biryani)**
+![Dataset and refusal](screenshots/02-dataset-and-refusal.png)
+
+**Conversation memory — Nova remembers the user's name**
+![Memory and refusal](screenshots/03-memory-and-refusal.png)
+
 ---
 
 ## 1. Overview
