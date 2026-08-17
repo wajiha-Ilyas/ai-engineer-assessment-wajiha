@@ -7,6 +7,7 @@ import logging
 from app.llm.client import LLMClientProtocol, RouteDecision, llm_client
 from app.schemas import AskResponse, Source
 from app.tools.dataset import Chunk
+from app.tools.fallback import handle_fallback
 from app.tools.superhero import SuperheroResult
 
 logger = logging.getLogger(__name__)
@@ -64,9 +65,9 @@ async def synthesize(
         )
 
     if not context_blocks:
-        answer = (
-            "I don't have enough information in my knowledge sources to answer that question."
-        )
+        # No tool results — use the few-shot fallback (handles greetings,
+        # self-intro, off-topic) instead of a static error string.
+        answer = await handle_fallback(question, client=c)
     else:
         answer = await c.answer(question, context_blocks)
 

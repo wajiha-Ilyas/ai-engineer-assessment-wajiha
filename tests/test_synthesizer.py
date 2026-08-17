@@ -74,13 +74,14 @@ async def test_synthesize_both():
 
 
 @pytest.mark.asyncio
-async def test_synthesize_no_context_skips_llm():
-    """When there are no context blocks, LLM should NOT be called."""
-    fake = FakeLLMClient()
+async def test_synthesize_no_context_calls_fallback():
+    """When there are no context blocks, the fallback handler IS called via LLM."""
+    fake = FakeLLMClient(answer_text="Math isn't my specialty! I'm Nova.")
     decision = RouteDecision(route="none")
     resp = await synthesize("What is 2+2?", decision, [], [], client=fake)
 
     assert resp.route == "none"
     assert resp.sources == []
-    assert fake.last_context_blocks == []  # LLM.answer was never called
-    assert "don't have enough information" in resp.answer
+    # fallback routes through answer() with a [FALLBACK] context block
+    assert fake.last_context_blocks == ["[FALLBACK] What is 2+2?"]
+    assert "Nova" in resp.answer
