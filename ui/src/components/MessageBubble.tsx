@@ -68,7 +68,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
         {/* Sources + route badge (Nova only) */}
         {!isUser && !message.error && message.route && (
-          <SourceList sources={message.sources ?? []} route={message.route} />
+          <SourceList route={message.route} />
         )}
       </div>
     </div>

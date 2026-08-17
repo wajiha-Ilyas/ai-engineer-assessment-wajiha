@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from app.llm.client import LLMClientProtocol, RouteDecision, llm_client
 from app.schemas import AskResponse, Source
@@ -54,24 +55,29 @@ async def synthesize(
             )
         )
 
-    # Add dataset context blocks
+    # Add dataset context blocks (one source entry per unique document)
+    seen_docs: set[str] = set()
     for chunk in dataset_chunks:
         context_blocks.append(_build_dataset_block(chunk))
-        sources.append(
-            Source(
-                kind="dataset",
-                doc_id=chunk.doc_id,
-                chunk_id=chunk.chunk_id,
-                title=chunk.title,
+        if chunk.doc_id not in seen_docs:
+            seen_docs.add(chunk.doc_id)
+            sources.append(
+                Source(
+                    kind="dataset",
+                    doc_id=chunk.doc_id,
+                    chunk_id=chunk.chunk_id,
+                    title=chunk.title,
+                )
             )
-        )
 
     if not context_blocks:
         # No tool results — use the few-shot fallback (handles greetings,
         # self-intro, off-topic) instead of a static error string.
         answer = await handle_fallback(question, history=history, client=c)
     else:
-        answer = await c.answer(question, context_blocks, history=history)
+        raw = await c.answer(question, context_blocks, history=history)
+        # Strip any residual citation tags the LLM may have added (e.g. "(S1)")
+        answer = re.sub(r"\s*\(S\d+(?:,\s*S\d+)*\)", "", raw).strip()
 
     return AskResponse(
         answer=answer,

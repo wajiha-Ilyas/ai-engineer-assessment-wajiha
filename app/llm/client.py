@@ -99,8 +99,7 @@ A: {"route": "none", "superhero_names": [], "dataset_query": ""}
 
 _ANSWER_SYSTEM = """\
 You are a helpful assistant. Answer the user's question using ONLY the context blocks provided.
-Each block is tagged [S1], [S2], etc. Cite the tag(s) you used at the end of your answer in parentheses.
-If the context is insufficient, say so honestly. Do not make up information.
+If the context is insufficient, say so honestly. Do not make up information. Do not include citation tags.
 """
 
 
